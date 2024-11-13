@@ -1,0 +1,2753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ABG Interpretation Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script> <!-- Include Fuse.js here -->
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial, sans-serif';
+            background: linear-gradient(135deg, #1E2F5F 0%, #1E2F5F 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            
+        }
+.overlay-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center the container vertically and horizontally */
+    width: 80vw; /* Set the width to be 80% of the viewport width */
+    max-width: 800px; /* Maximum width for the container */
+    height: auto;
+    max-height: 85vh; /* Set a maximum height */
+    animation: gradientAnimation 15s ease infinite;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+}
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #ff5c5c;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.close-button:hover {
+    background-color: #ff1c1c;
+}
+
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .infograph {
+            background: #fff;
+            padding: 20px;
+            width: 100%;
+            max-width: 900px;
+            max-height: 90%;
+            overflow: auto;
+            border-radius: 15px;
+            box-shadow: 0px 0px 30px rgba(0, 0, 0, 0.7);
+            text-align: center;
+            position: relative;
+            transition: box-shadow 0.3s ease-in-out;
+        }
+
+        .infograph:hover {
+            box-shadow: 0px 0px 50px rgba(0, 0, 0, 1);
+        }
+
+        .infograph h2 {
+            font-size: calc(1.2em + 0.8vw);
+            margin-bottom: 10px;
+            color: #000;
+        }
+
+        .infograph p {
+            font-size: calc(0.9em + 0.4vw);
+            color: #000;
+        }
+
+        .fishbone-diagram {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .step {
+            width: 30%;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            position: relative;
+            transition: border 0.3s ease-in-out, transform 0.3s ease-in-out;
+            opacity: 0;
+            animation: fadeIn 1s ease-in-out forwards;
+        }
+
+        .step:hover {
+            border: 2px solid #4b79a1;
+            transform: translateY(-5px);
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .step h3 {
+            margin: 0;
+            padding-bottom: 10px;
+            font-size: calc(1em + 0.4vw);
+            color: #333;
+        }
+
+        .step p {
+            font-size: calc(0.85em + 0.3vw);
+            color: #333;
+        }
+
+        .diagram-table {
+            width: 90%;
+            margin: 0 auto;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .diagram-table td {
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-size: calc(0.8em + 0.3vw);
+            position: relative;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .diagram-table tr:nth-child(1) td {
+            background-color: #ffd966;
+            color: #000;
+        }
+
+        .diagram-table tr:nth-child(2) td {
+            background-color: #0066cc;
+            color: #fff;
+        }
+
+        .diagram-table tr:nth-child(3) td {
+            background-color: #ccc;
+            color: #000;
+        }
+
+        .diagram-table tr:hover td {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .circle {
+            border: 2px solid #ff0000;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            display: inline-block;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .tooltip {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .tooltiptext {
+            visibility: hidden;
+            width: 140px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 0;
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -70px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .annotation {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            padding: 5px 10px;
+            font-size: calc(0.8em + 0.3vw);
+            border-radius: 4px;
+        }
+        
+        .button-container {
+            margin-top: 20px;
+        }
+
+        .next-button, .back-button {
+            padding: 10px 20px;
+            background-color: #4b79a1;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: calc(0.9em + 0.3vw);
+            margin: 5px;
+        }
+
+        .next-button:hover, .back-button:hover {
+            background-color: #283e51;
+        }
+
+        @media (max-width: 600px) {
+            .step {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+
+            .fishbone-diagram {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    .abg-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        border: 1px solid #ddd;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Add shadow for depth */
+        background-color: #ffffff; /* White background to contrast with shadow */
+    }
+
+    .abg-table th {
+        background-color: #4A90E2; /* Primary blue color for headers */
+        color: #ffffff; /* White text for contrast */
+        font-weight: bold;
+        padding: 12px 8px;
+        text-align: center;
+    }
+
+    .abg-table td {
+        border: 1px solid #ddd;
+        padding: 12px 8px;
+        text-align: center;
+        font-size: 0.8em; /* Keep font size consistent for readability */
+    }
+
+    /* Alternate row coloring for better readability */
+    .abg-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    .abg-table tr:nth-child(odd) {
+        background-color: #ffffff;
+    }
+
+    /* Hover effect to improve user experience */
+    .abg-table tr:hover {
+        background-color: #eaf4ff; /* Light blue on hover */
+    }
+    .scenario-card {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.scenario-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.scenario-image {
+    width: 150px;
+    height: auto;
+    border-radius: 10px;
+}
+
+.scenario-content {
+    font-size: 1.1em;
+    color: #333;
+    line-height: 1.5;
+}
+
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 5vw;
+            max-width: 1000px;
+            width: 90%;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+
+.game-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    width: 90vw;
+    height: auto;
+    max-width: 1200px;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+    overflow: hidden;
+    background: #f4f4f4;
+}
+
+        h1 {
+            font-size: calc(1.5em + 1vw);
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #startButton, #OverlayABG {
+            background-color: #97C8EB;
+            color: #fff;
+            font-size: calc(1em + 0.5vw);
+            padding: 10px 20px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #startButton:hover, #OverlayABG:hover {
+            background-color: #e55a50;
+            transform: scale(1.05);
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        img {
+            max-width: 30%;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap; /* This allows buttons to wrap when there's no space */
+            gap: 10px;
+        }
+
+        .button-container button {
+            background-color: #97C8EB;
+            color: #fff;
+            font-size: calc(0.9em + 0.5vw);
+            padding: 10px 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1 1 calc(50% - 10px); /* This makes buttons flexible with proper spacing */
+            min-width: 120px; /* Ensures buttons don't get too small */
+            min-height: 40px;
+        }
+        .content-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 20px; /* Adjust the gap between the image and buttons as needed */
+            justify-content: center;
+        }
+
+        .button-container button:hover {
+            background-color: #e55a50;
+            transform: scale(1.05);
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .left-panel, .right-panel {
+            flex: 1;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .left-panel {
+    background: rgba(255, 255, 255, 0.9);
+    border-right: 1px solid #ddd;
+    font-size: 1.1em;
+    text-align: left;
+    padding: 20px;
+    overflow-y: auto; /* Allows scrolling if content is too tall */
+}
+
+.right-panel {
+    background: rgba(240, 240, 240, 0.9);
+    overflow-y: auto;
+}
+        h3 {
+        font-size: 1.2em;
+        color: #333;
+    }
+      #scenario {
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+.input-boxes {
+    display: flex;
+    flex-direction: row; /* Arrange horizontally */
+    gap: 20px; /* Space between each input box */
+    justify-content: center; /* Center align the input boxes in the container */
+}
+
+.input-box {
+    display: flex;
+    flex-direction: column; /* Label above input */
+    align-items: center;
+    padding: 10px; /* Add padding around each input box */
+    border-radius: 5px; /* Round corners */
+    background-color: #f0f0f0; /* Light background color */
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); /* Light shadow */
+}
+
+.input-box label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 1.1em;
+    text-align: center;
+}
+
+.input-box input {
+    padding: 10px;
+    font-size: 1em;
+    width: 100%; /* Make input fill container width */
+    text-align: center; /* Center text inside input */
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+        .options-section {
+            margin-bottom: 10px;
+        }
+
+        .options-section h3 {
+            margin-bottom: 10px;
+        }
+
+        .options-section .options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .options-section .options button {
+            flex: 1 1 calc(50% - 10px);
+            padding: 10px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            background-color: #97C8EB;
+            color: white;
+        }
+
+        .options-section .options button:hover {
+            background-color: #e55a50;
+        }
+
+        .options-section .options button.selected {
+            background-color: #4CAF50;
+        }
+.button-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px; /* Adjust the gap between buttons as needed */
+    margin-bottom: 15px; /* Add margin to create space between rows */
+}
+
+.button-row button {
+    flex: 1;
+    padding: 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    background-color: #97C8EB;
+    color: white;
+}
+
+.button-row button:hover {
+    background-color: #e55a50;
+}
+
+.button-row button.selected {
+    background-color: #4CAF50;
+}
+.button-group-interpret {
+    display: flex;
+    gap: 15px; /* Adjust gap between buttons as needed */
+    margin-top: 20px;
+    justify-content: center; /* Align buttons horizontally in the center */
+}
+
+    .button-group-back {
+        margin-top: 30px;
+        text-align: center;
+    }
+
+        #interpretButton, #interpretButton2, #interpret-button {
+            padding: 8px;
+            font-size: 0.9em;
+            background-color: #97C8EB;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #interpretButton:hover, #interpretButton2:hover, #interpret-button:hover {
+            background-color: #e55a50;
+        }
+
+        #nextQuestionButton, #nextQuestionButton2, #next-button {
+            padding: 8px;
+            font-size: 0.9em;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            display: none;
+        }
+
+        #nextQuestionButton:hover, #nextQuestionButton2:hover, #next-button:hover {
+            background-color: #3e8e41;
+        }
+
+   @keyframes fadeIn {
+        0% {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+        #backButton1, #backButton2, #backButton3 {
+            padding: 8px;
+            font-size: 0.9em;
+            background-color: #97C8EB;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        #backButton1:hover, #backButton2:hover, #backButton3:hover {
+            background-color: #e55a50;
+        }
+      .button-group-interpret {
+    display: flex;
+    gap: 15px; /* Adjust gap between the Interpret and Next buttons */
+    margin-bottom: 20px; /* Add margin to create space below the Interpret group */
+}
+
+.button-group-back {
+    margin-top: 15px; /* Add space above the Back button to separate it from the Interpret buttons */
+}
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.overlay-content {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 600px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+#startLearningButton {
+    background-color: #97C8EB;
+    color: white;
+    font-size: 1em;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+/* Learning Objectives Cards */
+.objectives-card {
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    margin: 10px 0;
+    transition: transform 0.3s ease;
+}
+
+.objectives-card:hover {
+    transform: scale(1.03);
+}
+
+.icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.objective-text {
+    font-size: 1em;
+    color: #333;
+    text-align: left;
+}
+/* Instructions Overlay and Panels */
+.instructions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    text-align: left;
+    margin: 20px 0;
+}
+
+.instruction-panel {
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.instruction-panel:hover {
+    transform: scale(1.03);
+}
+
+.overlay-container-unique {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7); /* Darker semi-transparent background */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px); /* Adds a blur effect to background */
+}
+
+.overlay-content-unique {
+    background: #ffffff;
+    padding: 35px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 600px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    transform: scale(0.95);
+    animation: fadeInZoom 0.3s ease forwards;
+}
+
+@keyframes fadeInZoom {
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+h2 {
+    font-size: 1.8em;
+    color: #2a2a2a;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+p {
+    font-size: 1em;
+    color: #555;
+    margin-bottom: 25px;
+    line-height: 1.6;
+}
+
+.slider-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto 25px;
+    overflow: hidden;
+}
+
+.slider {
+    width: 100%;
+    height: 10px;
+    border-radius: 8px;
+    outline: none;
+    margin-top: 8px;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.2); /* Inner shadow for a 3D effect */
+}
+
+.slider-ph {
+    background: linear-gradient(to right, #ff4d4d 0%, #77dd77 35%, #77dd77 45%, #4d94ff 100%);
+}
+
+.slider-paco2 {
+    background: linear-gradient(to right, #ff8080 0%, #77dd77 35%, #77dd77 45%, #80b3ff 100%);
+}
+
+.slider-hco3 {
+    background: linear-gradient(to right, #ff6666 0%, #77dd77 30%, #77dd77 50%, #66b3ff 100%);
+}
+
+.range-labels {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 0.85em;
+    color: #555;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.label-low { color: #d9534f; }
+.label-normal { color: #5cb85c; }
+.label-high { color: #337ab7; }
+
+.reference-guide {
+    font-size: 0.95em;
+    color: #333;
+    margin-top: 20px;
+    text-align: center;
+    border-top: 1px solid #ddd;
+    padding-top: 15px;
+}
+
+.reference-guide h3 {
+    font-size: 1.2em;
+    color: #333;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+/* Info icon styling */
+.info-icon {
+    font-size: 0.9em;
+    margin-left: 5px;
+    cursor: pointer;
+    color: #888;
+}
+
+.feedback {
+    font-size: 0.85em;
+    color: #666;
+    font-style: italic;
+}
+
+#slideHelperButtonUnique {
+    background-color: #4b79a1;
+    color: #fff;
+    font-size: calc(0.5em + 0.25vw); /* Matches the font size of Fullscreen button */
+    padding: 5px 10px; /* Matches padding of Fullscreen button */
+    border: none;
+    border-radius: 25px; /* Matches the border radius */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px; /* Same margin as Fullscreen button */
+    margin-bottom: 10px;
+}
+
+#slideHelperButtonUnique:hover {
+    background-color: #e55a50;
+    transform: scale(1.05);
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2); /* Matches hover shadow effect */
+}
+
+.close-button {
+    background-color: #ff5c5c;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 1.2em;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.close-button:hover {
+    background-color: #e55a50;
+}
+
+.instructions {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #f0f8ff; /* Light background to make the instructions stand out */
+    border: 1px solid #d1e7fd; /* Subtle border for definition */
+    border-radius: 8px;
+}
+
+.instructions p {
+    font-size: 1em;
+    color: #333;
+    line-height: 1.6;
+    margin: 10px 0;
+}
+
+.instructions strong {
+    color: #2a6496; /* Distinct color for titles */
+    font-weight: 600;
+}
+
+.highlight {
+    color: #4b79a1; /* Consistent highlight color for parameters */
+    font-weight: bold;
+}
+
+.disorder-type {
+    color: #d9534f; /* Use a distinct color for the disorder type */
+    font-weight: bold;
+}
+
+/* Chatbox container styling */
+.chatbox-container {
+    position: relative; /* Set relative position to contain the close button */
+    background: #f8f9fa;
+    width: 800px;
+    height: 600px;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0px 6px 14px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+/* Unique styling for the chatbox close button */
+.chatbox-close-button {
+    position: absolute;
+    top: 10px; /* Align within the top of the chatbox-container */
+    right: 10px; /* Align within the right of the chatbox-container */
+    width: 30px;
+    height: 30px;
+    background-color: #ff4d4d;
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s ease;
+}
+
+.chatbox-close-button:hover {
+    background-color: #d93636;
+}
+
+/* Messages container styling */
+.messages {
+    height: 500px; /* Fixed height within the chatbox-container */
+    overflow-y: auto; /* Enables scrolling when content overflows */
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-sizing: border-box;
+    justify-content: flex-start; /* Keeps messages at the top initially */
+}
+
+
+/* Message bubbles */
+.message {
+    max-width: 75%;
+    padding: 15px;
+    border-radius: 15px;
+    font-size: 18px;
+    line-height: 1.5;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.5s ease-in-out forwards;
+}
+
+
+/* RN messages styling */
+.message-rn {
+    background-color: #e1ffc7;
+    align-self: flex-start;
+    border-bottom-left-radius: 0;
+}
+
+/* User messages styling */
+.message-user {
+    background-color: #d1e7ff;
+    align-self: flex-end;
+    border-bottom-right-radius: 0;
+}
+
+/* Modern ABG value box styles */
+.abg-container {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.abg-box {
+    background-color: #f7f9fc;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    width: 80px;
+    padding: 15px;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.abg-box:hover {
+    transform: translateY(-4px);
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.abg-box-header {
+    font-size: 14px;
+    font-weight: bold;
+    color: #4a4a4a;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.abg-box-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: #2a9d8f;
+}
+
+/* Input container styling */
+.input-container {
+    display: flex;
+    gap: 10px;
+    padding: 10px 0; /* Adds space around input */
+    align-items: center;
+    box-sizing: border-box;
+}
+
+/* Text input field styling */
+#entryField {
+    flex-grow: 1;
+    padding: 15px;
+    font-size: 18px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    outline: none;
+}
+
+/* Reply button styling */
+#replyBtn {
+    padding: 15px 20px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background-color: #357EC7;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#replyBtn:hover {
+    background-color: #285a8e;
+}
+
+#replyBtn:active {
+    transform: scale(0.95);
+    background-color: #1e4a7e;
+}
+
+/* Shared button styling for Reply and Mic buttons */
+.chat-button {
+    padding: 15px 20px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background-color: #357EC7;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.chat-button:hover {
+    background-color: #285a8e;
+}
+
+/* Container with a fixed height to prevent jumping */
+.typing-indicator-container {
+    height: 24px; /* Set a fixed height equal to the height of the typing indicator */
+    display: flex;
+    align-items: center;
+}
+
+/* Typing indicator itself */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    visibility: hidden; /* Start hidden, becomes visible via JavaScript */
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    background-color: #888;
+    border-radius: 50%;
+    animation: typing 0.6s infinite alternate;
+}
+.dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+.dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+@keyframes fadeInOut {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+#fullScreenButton {
+    background-color: #4b79a1;
+    color: #fff;
+    font-size: calc(0.5em + 0.25vw); /* Reduces font size by half */
+    padding: 5px 10px; /* Reduces padding to half */
+    border: none;
+    border-radius: 25px; /* Adjusts radius to match smaller size */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px; /* Space above the button */
+    margin-bottom: 10px; /* Space below the button */
+}
+
+#fullScreenButton:hover {
+    background-color: #e55a50;
+    transform: scale(1.05);
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+#closeInstructionsButton {
+    background-color: #4CAF50;
+    color: white;
+    font-size: 1em;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 5%; /* Increase padding for smaller screens */
+    }
+
+    @media screen and (max-width: 768px) {
+        .abg-table th, .abg-table td {
+            font-size: 0.9em;
+            padding: 6px;
+        }
+    }
+    @media screen and (max-width: 480px) {
+        .abg-table th, .abg-table td {
+            font-size: 0.8em;
+            padding: 4px;
+        }
+    }
+    @media (max-width: 768px) {
+        .left-panel, .right-panel {
+            flex: 1 1 100%;
+            padding: 10px;
+        }
+    }
+    @media (max-width: 480px) {
+    .button-container button, 
+    .options-section .options button {
+        font-size: 0.8em; 
+        padding: 8px;
+    }
+}
+/* Adjust layout for Portrait mode */
+@media screen and (orientation: portrait) {
+    .game-container {
+        flex-direction: column; /* Stack panels vertically */
+        width: 95vw;
+    }
+
+    .left-panel, .right-panel {
+        width: 100%; /* Panels take full width in portrait mode */
+    }
+
+    .container {
+        width: 90vw; /* Adjust container width for better fit in portrait mode */
+        margin-bottom: 20px; /* Space between container and full screen button */
+    }
+}
+
+/* Adjust layout for Landscape mode */
+@media screen and (orientation: landscape) {
+    .game-container {
+        flex-direction: row; /* Panels side-by-side in landscape */
+        width: 90vw;
+    }
+
+    .left-panel, .right-panel {
+        width: 50%; /* Panels each take half width in landscape */
+    }
+
+    .container {
+        width: 80vw; /* Slightly narrower container in landscape */
+    }
+}
+
+</style>
+</head>
+<body>
+    <div class="container" id="landingPage">
+        <h1>The Fundamentals to Arterial Blood Gas</h1>
+        <button id="startButton" onclick="goToPage2()">Start the Game</button>
+        <button id="OverlayABG" onclick="showOverlay()">Wait, how do I interpret ABG again?</button>
+        <button id="fullScreenButton" onclick="toggleFullScreen()">Full Screen Mode</button>
+    </div>
+
+    <div class="container" id="page2" style="display: none;">
+        <div class="content-wrapper">
+            <img src="https://i.postimg.cc/hPZKQhrC/ABG-Machine.png" alt="ABG Syringe">
+            <div class="button-container">
+		<!-- New button for ABG Interpretation Game -->
+                <button onclick="goToLevel1()">Level 1</button>
+                <button onclick="goToLevel2()">Level 2</button>
+                <button onclick="goToCaseBasedLearning()">Case-Based Learning</button>
+                <button onclick="goToHowToPlay()">How Do I Play</button>
+                <button id="fullScreenButton" onclick="toggleFullScreen()">Full Screen Mode</button>
+                <button id="showChatButton">Open Chatbox</button>
+
+            </div>
+        </div>
+    </div>
+
+        <div class="overlay-container">
+        <div class="infograph">
+            <button class="close-button" onclick="closeOverlay()">X</button> <!-- Close Button -->
+            <!-- Stage 1 -->
+            <div id="stage-1" class="stage">
+                <div class="infograph-content">
+                    <h2>The ABA BAB! to Arterial Bood Gas</h2>
+                    <p>A = Acidic/Acidosis | B = Alkalotic/Alkalosis</p>
+                    <div class="fishbone-diagram">
+                        <!-- Step 1 -->
+                        <div class="step">
+                            <div class="annotation">Step 1</div>
+                            <p>Draw ABA BAB Diagram</p>Respiratory = PCO2<br>Metabolic = HCO3<br>
+                            <br>
+                            <table class="diagram-table">
+                                <tr>
+                                    <td class="tooltip">A<span class="tooltiptext">Acidic</span></td>
+                                    <td>PH<br>7.35-7.45</td>
+                                    <td class="tooltip">B<span class="tooltiptext">Basic</span></td>
+                                </tr>
+                                <tr>
+                                    <td>B</td>
+                                    <td class="tooltip">PCO2<br>35-45</td>
+                                    <td>A</td>
+                                </tr>
+                                <tr>
+                                    <td>A</td>
+                                    <td class="tooltip">HCO3<br>22-26</td>
+                                    <td>B</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="step">
+                            <div class="annotation">Step 2</div>
+                            <p><i class="fas fa-info-circle"></i> Circle where the values are on the ABA BAB Diagram</p>
+                            <p>ABG Example:</p>
+                            </p>PH = 7.31 | PCO2 = 49 | HCO3 = 26<p>
+                            <table class="diagram-table">
+                                <tr>
+                                    <td><div class="circle">A</div></td>
+                                    <td>PH<br>7.35-7.45</td>
+                                    <td>B</td>
+                                </tr>
+                                <tr>
+                                    <td>B</td>
+                                    <td>PCO2<br>35-45</td>
+                                    <td><div class="circle">A</div></td>
+                                </tr>
+                                <tr>
+                                    <td>A</td>
+                                    <td>HCO3<br>22-26</td>
+                                    <td>B</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="step">
+                            <div class="annotation">Step 3</div>
+                            <p>Connect the 2 letters that are the same then identify which section it is in</p>
+                            <p>PCO2 = Respiratory</p>
+                            </p>HCO3 = Metabolic</p>
+                            </p>PH = Acidosis or Alkalosis</p>
+                            <table class="diagram-table">
+                                <tr>
+                                    <td><div class="circle">A</div></td>
+                                    <td>PH<br>7.35-7.45</td>
+                                    <td>B</td>
+                                </tr>
+                                <tr>
+                                    <td>A</td>
+                                    <td>PCO2<br>35-45</td>
+                                    <td><div class="circle">A</div></td>
+                                </tr>
+                                <tr>
+                                    <td>A</td>
+                                    <td>HCO3<br>22-26</td>
+                                    <td>B</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <p><em>Step 3 illustrates an Uncompensated Respiratory Acidosis</em></p>
+                    <div class="button-container">
+                        <button onclick="nextStage(1)" class="next-button">Next Stage</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stage 2 -->
+            <div id="stage-2" class="stage" style="display: none;">
+                <div class="infograph-content">
+                    <h2>The ABA BAB! to ABG Compensation</h2>
+                    <p>Understanding Compensation</p>
+                    <div class="fishbone-diagram">
+                        <!-- Step 1 -->
+                        <div class="step">
+                            <div class="annotation">Step 1</div>
+                            <p>Are both PCO2 and HCO3 abnormal? Compensation is occurring!</p>
+                            <br>Respiratory = PCO2<br>Metabolic = HCO3<br>
+                            <br><br><br>
+                            <table class="diagram-table">
+                                <tr>
+                                    <td>A</td>
+                                    <td>PH<br>7.35-7.45</td>
+                                    <td>B</td>
+                                </tr>
+                                <tr>
+                                    <td>B</td>
+                                    <td>35-45<br>PCO2</td>
+                                    <td>A</td>
+                                </tr>
+                                <tr>
+                                    <td>A</td>
+                                    <td>22-28<br>HCO3</td>
+                                    <td>B</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="step">
+                            <div class="annotation">Step 2</div>
+                            <p>Abnormal pH = Partial Compensation<br> Normal pH = Full Compensation</p>
+                            <p>Example: PH = 7.31 | PCO2 = 49 | HCO3 = 29</p>
+                            <br>
+                            <table class="diagram-table">
+                                <tr>
+                                    <td><div class="circle">A</div></td>
+                                    <td>PH<br>7.35-7.45</td>
+                                    <td>B</td>
+                                </tr>
+                                <tr>
+                                    <td>B</td>
+                                    <td>PCO2<br>35-45</td>
+                                    <td><div class="circle">A</div></td>
+                                </tr>
+                                <tr>
+                                    <td>A</td>
+                                    <td>HCO3<br>22-28</td>
+                                    <td><div class="circle">B</div></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="step">
+                            <div class="annotation">Step 3</div>
+                            <p>the primary disorder is the buffer furthest away from its normal</p>
+                            <p>PCO2 = Respiratory | HCO3 = Metabolic | PH = Acidosis or Alkalosis</p>
+                            <br>
+                            <table class="diagram-table">
+                                <tr>
+                                    <td><div class="circle">A</div></td>
+                                    <td>PH<br>7.35-7.45</td>
+                                    <td>B</td>
+                                </tr>
+                                <tr>
+                                    <td>B</td>
+                                    <td>PCO2<br>35-45</td>
+                                    <td><div class="circle">A</div></td>
+                                </tr>
+                                <tr>
+                                    <td>A</td>
+                                    <td>HCO3<br>22-26</td>
+                                    <td><div class="circle">B</div></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <p><em>Step 3 illustrates Respiratory Acidosis with Partial Compensation</em></p>
+                    <div class="button-container">
+                        <button onclick="previousStage(2)" class="back-button">Back</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="game-container" id="level1" style="display: none;">
+        <div class="left-panel" id="leftPanel">
+            <!-- Response message will be displayed here -->
+        </div>
+        <div class="right-panel">
+            <div class="input-boxes">
+                <div class="input-box">
+                    <label for="ph">pH</label>
+                    <input type="text" id="ph" readonly>
+                </div>
+                <div class="input-box">
+                    <label for="paco2">PaCO2</label>
+                    <input type="text" id="paco2" readonly>
+                </div>
+                <div class="input-box">
+                    <label for="hco3">HCO3</label>
+                    <input type="text" id="hco3" readonly>
+                </div>
+            </div>
+
+            <div class="options-section">
+                <h3>Primary Problem</h3>
+                <div class="options" id="primaryProblemOptions">
+                    <button onclick="selectOption('primaryProblem', 'respAlk', this)">Respiratory Alkalosis</button>
+                    <button onclick="selectOption('primaryProblem', 'respAcid', this)">Respiratory Acidosis</button>
+                    <button onclick="selectOption('primaryProblem', 'metAlk', this)">Metabolic Alkalosis</button>
+                    <button onclick="selectOption('primaryProblem', 'metAcid', this)">Metabolic Acidosis</button>
+                </div>
+            </div>
+
+            <div class="options-section">
+                <h3>Type of Compensation</h3>
+                <div class="options" id="compensationTypeOptions">
+                    <button onclick="selectOption('compensationType', 'none', this)">None</button>
+                    <button onclick="selectOption('compensationType', 'partial', this)">Partial</button>
+                    <button onclick="selectOption('compensationType', 'full', this)">Full</button>
+                </div>
+            </div>
+
+            <div class="options-section">
+                <h3>Compensation</h3>
+                <div class="options" id="compensationOptions">
+                    <button onclick="selectOption('compensation', 'none', this)">None</button>
+                    <button onclick="selectOption('compensation', 'respAlk', this)">Respiratory Alkalosis</button>
+                    <button onclick="selectOption('compensation', 'respAcid', this)">Respiratory Acidosis</button>
+                    <button onclick="selectOption('compensation', 'metAlk', this)">Metabolic Alkalosis</button>
+                    <button onclick="selectOption('compensation', 'metAcid', this)">Metabolic Acidosis</button>
+                </div>
+            </div>
+
+            <button id="interpretButton" onclick="interpretABG()">Interpret</button>
+            <button id="nextQuestionButton" onclick="nextQuestion()">Next Question</button>
+            <button onclick="goBackToPage2()" id="backButton1">Back</button>
+            <button id="fullScreenButton" onclick="toggleFullScreen()">Full Screen Mode</button>
+            <button id="slideHelperButtonUnique" onclick="openSlideHelperUnique()">Slide Helper</button>
+        </div>
+    </div>
+
+    <div class="game-container" id="level2" style="display: none;">
+        <div class="left-panel" id="leftPanel2">
+            <!-- Response message will be displayed here -->
+        </div>
+        <div class="right-panel">
+            <div class="input-boxes">
+                <div class="input-box">
+                    <label for="ph2">pH</label>
+                    <input type="text" id="ph2" readonly>
+                </div>
+                <div class="input-box">
+                    <label for="paco2-2">PaCO2</label>
+                    <input type="text" id="paco2-2" readonly>
+                </div>
+                <div class="input-box">
+                    <label for="hco3-2">HCO3</label>
+                    <input type="text" id="hco3-2" readonly>
+                </div>
+            </div>
+
+<div class="options-section">
+    <h3>Primary Problem</h3>
+    <div class="options" id="primaryProblemOptions2">
+        <button onclick="selectOption2('primaryProblem2', 'respAlk', this)">Respiratory Alkalosis</button>
+        <button onclick="selectOption2('primaryProblem2', 'respAcid', this)">Respiratory Acidosis</button>
+        <button onclick="selectOption2('primaryProblem2', 'metAlk', this)">Metabolic Alkalosis</button>
+        <button onclick="selectOption2('primaryProblem2', 'metAcid', this)">Metabolic Acidosis</button>
+    </div>
+</div>
+
+<div class="options-section">
+    <h3>Type of Compensation</h3>
+    <div class="options" id="compensationTypeOptions2">
+        <button onclick="selectOption2('compensationType2', 'none', this)">None</button>
+        <button onclick="selectOption2('compensationType2', 'partial', this)">Partial</button>
+        <button onclick="selectOption2('compensationType2', 'full', this)">Full</button>
+    </div>
+</div>
+
+<div class="options-section">
+    <h3>Compensation</h3>
+    <div class="options" id="compensationOptions2">
+        <button onclick="selectOption2('compensation2', 'none', this)">None</button>
+        <button onclick="selectOption2('compensation2', 'respAlk', this)">Respiratory Alkalosis</button>
+        <button onclick="selectOption2('compensation2', 'respAcid', this)">Respiratory Acidosis</button>
+        <button onclick="selectOption2('compensation2', 'metAlk', this)">Metabolic Alkalosis</button>
+        <button onclick="selectOption2('compensation2', 'metAcid', this)">Metabolic Acidosis</button>
+    </div>
+</div>
+
+
+            <button id="interpretButton2" onclick="interpretABG2()">Interpret</button>
+            <button id="nextQuestionButton2" onclick="nextQuestion2()">Next Question</button>
+            <button onclick="goBackToPage2()" id="backButton2">Back</button>
+            <button id="fullScreenButton" onclick="toggleFullScreen()">Full Screen Mode</button>
+            <button id="slideHelperButtonUnique" onclick="openSlideHelperUnique()">Slide Helper</button>
+        </div>
+    </div>
+
+<div id="caseBasedLearning" class="game-container" style="display: none;">
+    <div class="left-panel" id="left-panel">
+        <p>Please read the scenario on the right and choose the best interpretation of the acid-base imbalance.</p>
+    </div>
+    <div class="right-panel" id="right-panel">
+        <div class="scenario-card">
+            <img src="https://i.postimg.cc/5tT9g3fz/Heart-animation.png" alt="Patient Scenario Image" class="scenario-image">
+            <div class="scenario-content">
+                <p id="scenario"></p>
+            </div>
+        </div>
+        <div class="button-group">
+            <div class="button-row">
+                <button onclick="selectOptionCBL('respiratory_acidosis')">Respiratory Acidosis</button>
+                <button onclick="selectOptionCBL('respiratory_alkalosis')">Respiratory Alkalosis</button>
+            </div>
+            <div class="button-row">
+                <button onclick="selectOptionCBL('metabolic_acidosis')">Metabolic Acidosis</button>
+                <button onclick="selectOptionCBL('metabolic_alkalosis')">Metabolic Alkalosis</button>
+            </div>
+        </div>
+        <div class="button-group-interpret">
+    <button id="interpret-button" onclick="interpretAnswerCBL()">Interpret</button>
+    <button id="next-button" onclick="nextQuestionCBL()">Next Question</button>
+    <button onclick="goBackToPage2()" id="backButton3">Back</button>
+    <button id="fullScreenButton" onclick="toggleFullScreen()">Full Screen Mode</button>
+</div>
+    </div>
+</div>
+
+<div id="learningObjectives" class="overlay" style="display: none;">
+    <div class="overlay-content">
+        <h3 id="objectivesTitle"></h3>
+        <ul id="objectivesList"></ul>
+        <button id="startLearningButton" onclick="hideLearningObjectives()">Start Learning</button>
+    </div>
+</div>
+<!-- Add Step 1: Instruction Overlay Here -->
+<div id="instructionsOverlay" class="overlay" style="display: none;">
+    <div class="overlay-content">
+        <h3>How to Play</h3>
+        <div class="instructions-list">
+            <div class="instruction-panel">1. The left panel of each game provides you instructions.</div>
+            <div class="instruction-panel">2. Use your knowledge of acid-base balance to interpret each ABG value.</div>
+            <div class="instruction-panel">3. Choose an answer based on the provided ABG values and press 'Interpret'.</div>
+            <div class="instruction-panel">4. If your answer is incorrect, just try again and press 'Interpret'.</div>
+            <div class="instruction-panel">5. Progress through the levels to master ABG interpretation.</div>
+        </div>
+        <button id="closeInstructionsButton" onclick="hideInstructions()">Got it!</button>
+    </div>
+</div>
+<!-- Overlay Structure -->
+<div id="slideHelperOverlayUnique" class="overlay-container-unique" style="display:none">
+    <div class="overlay-content-unique">
+        <button onclick="closeSlideHelper()" class="close-button">×</button>
+        <h2>Slide Helper Tool</h2>
+        
+        <!-- Updated Instructional Text -->
+        <div class="instructions">
+            <p><strong>Respiratory Opposite:</strong> If <span class="highlight">pH</span> and <span class="highlight">PaCO₂</span> are opposite → <span class="disorder-type">Respiratory disorder</span>.</p>
+            <p><strong>Metabolic Equal:</strong> If <span class="highlight">pH</span> and <span class="highlight">HCO₃⁻</span> are equal → <span class="disorder-type">Metabolic disorder</span>.</p>
+        </div>
+
+        <!-- Existing Sliders and Instructions -->
+        <label for="slider1">pH (7.0 - 7.7): <span id="slider1Value">7.40</span> 
+            <span class="info-icon" title="Normal range: 7.35-7.45. pH < 7.35 indicates acidosis, pH > 7.45 indicates alkalosis.">ℹ️</span>
+            <span id="slider1Feedback" class="feedback"></span>
+        </label>
+        <div class="slider-container">
+            <div class="range-labels">
+                <span class="label-low">Acidic</span>
+                <span class="label-normal">Normal Range</span>
+                <span class="label-high">Alkaline</span>
+            </div>
+            <input type="range" id="slider1" min="7.0" max="7.8" step="0.01" value="7.40" oninput="updateSliderValue('slider1', 'slider1Value')" class="slider slider-ph">
+        </div>
+
+        <label for="slider2">PaCO₂ (10 - 70 mmHg): <span id="slider2Value">40</span> 
+            <span class="info-icon" title="Normal range: 35-45 mmHg. PaCO₂ < 35 indicates respiratory alkalosis, PaCO₂ > 45 indicates respiratory acidosis.">ℹ️</span>
+            <span id="slider2Feedback" class="feedback"></span>
+        </label>
+        <div class="slider-container">
+            <div class="range-labels">
+                <span class="label-low">Alkaline (≤34)</span>
+                <span class="label-normal">Normal Range</span>
+                <span class="label-high">Acidic (≥46)</span>
+            </div>
+            <input type="range" id="slider2" min="10" max="70" step="1" value="40" oninput="updateSliderValue('slider2', 'slider2Value')" class="slider slider-paco2">
+        </div>
+
+        <label for="slider3">HCO₃ (12 - 36 mEq/L): <span id="slider3Value">24</span> 
+            <span class="info-icon" title="Normal range: 22-26 mEq/L. HCO₃ < 22 indicates metabolic acidosis, HCO₃ > 26 indicates metabolic alkalosis.">ℹ️</span>
+            <span id="slider3Feedback" class="feedback"></span>
+        </label>
+        <div class="slider-container">
+            <div class="range-labels">
+                <span class="label-low">Acidic (≤21)</span>
+                <span class="label-normal">Normal Range</span>
+                <span class="label-high">Alkaline (≥27)</span>
+            </div>
+            <input type="range" id="slider3" min="12" max="36" step="1" value="24" oninput="updateSliderValue('slider3', 'slider3Value')" class="slider slider-hco3">
+        </div>
+
+        <button id="slideHelperButton" onclick="closeSlideHelper()">Close</button>
+
+        <!-- Reference Guide -->
+        <div class="reference-guide">
+            <h3>Reference Guide</h3>
+            <p><strong>pH:</strong> Acidic (<7.35), Normal (7.35–7.45), Alkaline (>7.45)</p>
+            <p><strong>PaCO₂:</strong> Alkaline (≤34 mmHg), Normal (35–45 mmHg), Acidic (≥46 mmHg)</p>
+            <p><strong>HCO₃:</strong> Acidic (≤21 mEq/L), Normal (22–26 mEq/L), Alkaline (≥27 mEq/L)</p>
+        </div>
+    </div>
+</div>
+<div id="chatPage" style="display: none;">
+    <div class="chatbox-container">
+        <button id="closeChatButton" class="chatbox-close-button">×</button>
+        <div id="chatbox" class="chatbox">
+            <div id="messages" class="messages">
+                <!-- Chat messages will appear here -->
+            </div>
+            <div class="input-container">
+                <input type="text" id="entryField" placeholder="Type your message...">
+                <button id="replyBtn">Reply</button>
+            </div>
+        </div>
+    </div>
+</div>
+    <script>
+    
+        let abgQuestions = [
+    { "pH": "7.30", "PaCO2": "50", "HCO3": "24", "primaryProblem": "respAcid", "compensationType": "none", "compensation": "none", "response": "This is an example of uncompensated respiratory acidosis." },
+    { "pH": "7.48", "PaCO2": "30", "HCO3": "24", "primaryProblem": "respAlk", "compensationType": "none", "compensation": "none", "response": "This is an example of uncompensated respiratory alkalosis." },
+    { "pH": "7.32", "PaCO2": "40", "HCO3": "18", "primaryProblem": "metAcid", "compensationType": "none", "compensation": "none", "response": "This is an example of uncompensated metabolic acidosis." },
+    { "pH": "7.50", "PaCO2": "40", "HCO3": "30", "primaryProblem": "metAlk", "compensationType": "none", "compensation": "none", "response": "This is an example of uncompensated metabolic alkalosis." },
+    { "pH": "7.28", "PaCO2": "55", "HCO3": "24", "primaryProblem": "respAcid", "compensationType": "none", "compensation": "none", "response": "This is another case of uncompensated respiratory acidosis." },
+    { "pH": "7.51", "PaCO2": "28", "HCO3": "24", "primaryProblem": "respAlk", "compensationType": "none", "compensation": "none", "response": "This indicates uncompensated respiratory alkalosis." },
+    { "pH": "7.29", "PaCO2": "40", "HCO3": "17", "primaryProblem": "metAcid", "compensationType": "none", "compensation": "none", "response": "This is uncompensated metabolic acidosis." },
+    { "pH": "7.55", "PaCO2": "40", "HCO3": "34", "primaryProblem": "metAlk", "compensationType": "none", "compensation": "none", "response": "This is uncompensated metabolic alkalosis." },
+    { "pH": "7.33", "PaCO2": "47", "HCO3": "24", "primaryProblem": "respAcid", "compensationType": "none", "compensation": "none", "response": "This is uncompensated respiratory acidosis." },
+    { "pH": "7.47", "PaCO2": "29", "HCO3": "24", "primaryProblem": "respAlk", "compensationType": "none", "compensation": "none", "response": "This indicates uncompensated respiratory alkalosis." },
+    { "pH": "7.49", "PaCO2": "40", "HCO3": "30", "primaryProblem": "metAlk", "compensationType": "none", "compensation": "none", "response": "This is uncompensated metabolic alkalosis." },
+    { "pH": "7.31", "PaCO2": "40", "HCO3": "18", "primaryProblem": "metAcid", "compensationType": "none", "compensation": "none", "response": "This is uncompensated metabolic acidosis." },
+    { "pH": "7.27", "PaCO2": "52", "HCO3": "24", "primaryProblem": "respAcid", "compensationType": "none", "compensation": "none", "response": "This is uncompensated respiratory acidosis." },
+    { "pH": "7.54", "PaCO2": "40", "HCO3": "33", "primaryProblem": "metAlk", "compensationType": "none", "compensation": "none", "response": "This is uncompensated metabolic alkalosis." },
+    { "pH": "7.34", "PaCO2": "40", "HCO3": "20", "primaryProblem": "metAcid", "compensationType": "none", "compensation": "none", "response": "This is uncompensated metabolic acidosis." },
+    { "pH": "7.31", "PaCO2": "47", "HCO3": "24", "primaryProblem": "respAcid", "compensationType": "none", "compensation": "none", "response": "This is uncompensated respiratory acidosis." },
+    { "pH": "7.28", "PaCO2": "40", "HCO3": "18", "primaryProblem": "metAcid", "compensationType": "none", "compensation": "none", "response": "This is uncompensated metabolic acidosis." },
+    { "pH": "7.52", "PaCO2": "40", "HCO3": "31", "primaryProblem": "metAlk", "compensationType": "none", "compensation": "none", "response": "This is uncompensated metabolic alkalosis." },
+    { "pH": "7.30", "PaCO2": "49", "HCO3": "24", "primaryProblem": "respAcid", "compensationType": "none", "compensation": "none", "response": "This is an example of uncompensated respiratory acidosis." },
+    { "pH": "7.46", "PaCO2": "28", "HCO3": "24", "primaryProblem": "respAlk", "compensationType": "none", "compensation": "none", "response": "This indicates uncompensated respiratory alkalosis." }
+    
+];
+
+        let abgQuestions2 = [
+            { "pH": "7.25", "PaCO2": "60", "HCO3": "26", "primaryProblem": "respAcid", "compensationType": "partial", "compensation": "none", "response": "This is a partially compensated respiratory acidosis." },
+    { "pH": "7.55", "PaCO2": "32", "HCO3": "23", "primaryProblem": "respAlk", "compensationType": "none", "compensation": "none", "response": "This is uncompensated respiratory alkalosis." },
+    { "pH": "7.20", "PaCO2": "40", "HCO3": "15", "primaryProblem": "metAcid", "compensationType": "none", "compensation": "none", "response": "This is uncompensated metabolic acidosis." },
+    { "pH": "7.60", "PaCO2": "45", "HCO3": "35", "primaryProblem": "metAlk", "compensationType": "none", "compensation": "none", "response": "This is uncompensated metabolic alkalosis." },
+    { "pH": "7.29", "PaCO2": "58", "HCO3": "27", "primaryProblem": "respAcid", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated respiratory acidosis." },
+    { "pH": "7.52", "PaCO2": "25", "HCO3": "24", "primaryProblem": "respAlk", "compensationType": "none", "compensation": "none", "response": "This is uncompensated respiratory alkalosis." },
+    { "pH": "7.30", "PaCO2": "40", "HCO3": "19", "primaryProblem": "metAcid", "compensationType": "none", "compensation": "none", "response": "This is uncompensated metabolic acidosis." },
+    { "pH": "7.58", "PaCO2": "42", "HCO3": "36", "primaryProblem": "metAlk", "compensationType": "none", "compensation": "none", "response": "This is uncompensated metabolic alkalosis." },
+    { "pH": "7.35", "PaCO2": "50", "HCO3": "28", "primaryProblem": "respAcid", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated respiratory acidosis." },
+    { "pH": "7.47", "PaCO2": "27", "HCO3": "22", "primaryProblem": "respAlk", "compensationType": "none", "compensation": "none", "response": "This is uncompensated respiratory alkalosis." },
+    { "pH": "7.33", "PaCO2": "55", "HCO3": "30", "primaryProblem": "respAcid", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated respiratory acidosis." },
+    { "pH": "7.38", "PaCO2": "30", "HCO3": "18", "primaryProblem": "metAcid", "compensationType": "full", "compensation": "none", "response": "This is fully compensated metabolic acidosis." },
+    { "pH": "7.50", "PaCO2": "50", "HCO3": "34", "primaryProblem": "metAlk", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated metabolic alkalosis." },
+    { "pH": "7.31", "PaCO2": "65", "HCO3": "32", "primaryProblem": "respAcid", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated respiratory acidosis." },
+    { "pH": "7.41", "PaCO2": "28", "HCO3": "18", "primaryProblem": "metAcid", "compensationType": "full", "compensation": "none", "response": "This is fully compensated metabolic acidosis." },
+    { "pH": "7.47", "PaCO2": "60", "HCO3": "40", "primaryProblem": "metAlk", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated metabolic alkalosis." },
+    { "pH": "7.30", "PaCO2": "68", "HCO3": "29", "primaryProblem": "respAcid", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated respiratory acidosis." },
+    { "pH": "7.43", "PaCO2": "25", "HCO3": "15", "primaryProblem": "metAcid", "compensationType": "full", "compensation": "none", "response": "This is fully compensated metabolic acidosis." },
+    { "pH": "7.49", "PaCO2": "52", "HCO3": "36", "primaryProblem": "metAlk", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated metabolic alkalosis." },
+    { "pH": "7.26", "PaCO2": "62", "HCO3": "28", "primaryProblem": "respAcid", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated respiratory acidosis." },
+    { "pH": "7.42", "PaCO2": "24", "HCO3": "16", "primaryProblem": "metAcid", "compensationType": "full", "compensation": "none", "response": "This is fully compensated metabolic acidosis." },
+    { "pH": "7.51", "PaCO2": "54", "HCO3": "38", "primaryProblem": "metAlk", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated metabolic alkalosis." },
+    { "pH": "7.28", "PaCO2": "64", "HCO3": "30", "primaryProblem": "respAcid", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated respiratory acidosis." },
+    { "pH": "7.40", "PaCO2": "22", "HCO3": "14", "primaryProblem": "metAcid", "compensationType": "full", "compensation": "none", "response": "This is fully compensated metabolic acidosis." },
+    { "pH": "7.48", "PaCO2": "58", "HCO3": "34", "primaryProblem": "metAlk", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated metabolic alkalosis." },
+    { "pH": "7.32", "PaCO2": "66", "HCO3": "32", "primaryProblem": "respAcid", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated respiratory acidosis." },
+    { "pH": "7.39", "PaCO2": "20", "HCO3": "12", "primaryProblem": "metAcid", "compensationType": "full", "compensation": "none", "response": "This is fully compensated metabolic acidosis." },
+    { "pH": "7.46", "PaCO2": "55", "HCO3": "36", "primaryProblem": "metAlk", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated metabolic alkalosis." },
+    { "pH": "7.27", "PaCO2": "63", "HCO3": "28", "primaryProblem": "respAcid", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated respiratory acidosis." },
+    { "pH": "7.44", "PaCO2": "26", "HCO3": "18", "primaryProblem": "metAcid", "compensationType": "full", "compensation": "none", "response": "This is fully compensated metabolic acidosis." },
+    { "pH": "7.50", "PaCO2": "53", "HCO3": "35", "primaryProblem": "metAlk", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated metabolic alkalosis." },
+    { "pH": "7.31", "PaCO2": "67", "HCO3": "31", "primaryProblem": "respAcid", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated respiratory acidosis." },
+    { "pH": "7.41", "PaCO2": "23", "HCO3": "15", "primaryProblem": "metAcid", "compensationType": "full", "compensation": "none", "response": "This is fully compensated metabolic acidosis." },
+    { "pH": "7.49", "PaCO2": "59", "HCO3": "34", "primaryProblem": "metAlk", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated metabolic alkalosis." },
+    { "pH": "7.29", "PaCO2": "65", "HCO3": "30", "primaryProblem": "respAcid", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated respiratory acidosis." },
+    { "pH": "7.37", "PaCO2": "30", "HCO3": "18", "primaryProblem": "metAcid", "compensationType": "full", "compensation": "none", "response": "This is fully compensated metabolic acidosis." },
+    { "pH": "7.48", "PaCO2": "50", "HCO3": "32", "primaryProblem": "metAlk", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated metabolic alkalosis." },
+    { "pH": "7.28", "PaCO2": "70", "HCO3": "33", "primaryProblem": "respAcid", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated respiratory acidosis." },
+    { "pH": "7.42", "PaCO2": "28", "HCO3": "18", "primaryProblem": "metAcid", "compensationType": "full", "compensation": "none", "response": "This is fully compensated metabolic acidosis." },
+    { "pH": "7.47", "PaCO2": "60", "HCO3": "39", "primaryProblem": "metAlk", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated metabolic alkalosis." },
+    { "pH": "7.30", "PaCO2": "67", "HCO3": "29", "primaryProblem": "respAcid", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated respiratory acidosis." },
+    { "pH": "7.40", "PaCO2": "26", "HCO3": "16", "primaryProblem": "metAcid", "compensationType": "full", "compensation": "none", "response": "This is fully compensated metabolic acidosis." },
+    { "pH": "7.49", "PaCO2": "55", "HCO3": "37", "primaryProblem": "metAlk", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated metabolic alkalosis." },
+    { "pH": "7.32", "PaCO2": "65", "HCO3": "31", "primaryProblem": "respAcid", "compensationType": "partial", "compensation": "none", "response": "This is partially compensated respiratory acidosis." }
+        ];
+
+const scenarios = [
+    {
+        "scenario": "A 45-year-old male with a history of type 1 diabetes presents with altered mental status, rapid deep breathing (Kussmaul respirations), and dehydration. On physical examination, his skin is dry, mucous membranes are parched, and his breath has a fruity odour. Lab results show elevated ketones and hyperglycaemia.",
+        "correct": "metabolic_acidosis",
+        "detailedExplanation": "In this scenario, the patient's type 1 diabetes has led to an inability to use glucose for energy due to a lack of insulin. As a result, the body turns to fat for energy, leading to the production of acidic ketones. The accumulation of these ketones results in metabolic acidosis. The deep, rapid breathing (Kussmaul respirations) is a compensatory mechanism to blow off CO2 and reduce acidosis.",
+        "keyIndicators": "Elevated ketones, rapid deep breathing (Kussmaul respirations), history of diabetes, dehydration, fruity breath odour, hyperglycaemia."
+    },
+    {
+        "scenario": "A 28-year-old female presents to the emergency department with dizziness, tingling in her hands and feet, and chest tightness after experiencing an acute panic attack. She appears visibly anxious, and her respiratory rate is 28 breaths per minute. Her capillary refill time is less than 2 seconds, and her oxygen saturation is 99%.",
+        "correct": "respiratory_alkalosis",
+        "detailedExplanation": "During a panic attack, the patient hyperventilates, leading to excessive elimination of CO2. This rapid loss of CO2 decreases the amount of carbonic acid in the blood, leading to an increase in pH, which is characteristic of respiratory alkalosis. The symptoms of dizziness and tingling in her extremities are due to decreased ionised calcium levels that accompany alkalosis.",
+        "keyIndicators": "Anxiety, hyperventilation, elevated respiratory rate, tingling sensations, chest tightness."
+    },
+    {
+        "scenario": "A 65-year-old male with a history of COPD presents with increasing shortness of breath, confusion, and lethargy. His respiratory rate is 10 breaths per minute, and he appears cyanotic.",
+        "correct": "respiratory_acidosis",
+        "detailedExplanation": "The patient has a history of COPD, which predisposes him to chronic CO2 retention. The low pH indicates acidosis, while the elevated PaCO2 confirms a respiratory origin. The confusion and lethargy are consistent with CO2 retention, and the cyanosis suggests inadequate oxygenation.",
+        "keyIndicators": "History of COPD, cyanosis, lethargy, confusion, low respiratory rate."
+    },
+    {
+        "scenario": "A 72-year-old female with a history of congestive heart failure presents with severe oedema and difficulty breathing. She has been on diuretic therapy for several weeks.",
+        "correct": "metabolic_alkalosis",
+        "detailedExplanation": "The patient presents with metabolic alkalosis, likely due to diuretic use, which can lead to excessive loss of hydrogen ions and increased bicarbonate. The diuretic therapy and symptoms of severe oedema and difficulty breathing are consistent with an underlying metabolic alkalosis.",
+        "keyIndicators": "History of congestive heart failure, severe oedema, diuretic use, difficulty breathing."
+    },
+    {
+        "scenario": "A 30-year-old male presents with severe vomiting for the past 24 hours. He complains of weakness and light-headedness.",
+        "correct": "metabolic_alkalosis",
+        "detailedExplanation": "Prolonged vomiting leads to the loss of gastric acid, resulting in a decrease in hydrogen ion concentration and an increase in bicarbonate, causing metabolic alkalosis. The symptoms of weakness and light-headedness are consistent with this condition.",
+        "keyIndicators": "Severe vomiting, weakness, light-headedness."
+    },
+    {
+        "scenario": "A 19-year-old male presents with a drug overdose resulting in decreased respiratory effort. His respiratory rate is 6 breaths per minute, and he is unresponsive.",
+        "correct": "respiratory_acidosis",
+        "detailedExplanation": "The patient's decreased respiratory effort due to a drug overdose leads to hypoventilation and CO2 retention. This causes respiratory acidosis. The low respiratory rate and unresponsiveness are key signs of hypoventilation.",
+        "keyIndicators": "Drug overdose, decreased respiratory effort, low respiratory rate, unresponsiveness."
+    },
+    {
+        "scenario": "A 50-year-old female with chronic renal failure presents with fatigue, nausea, and shortness of breath.",
+        "correct": "metabolic_acidosis",
+        "detailedExplanation": "Chronic renal failure leads to an inability to excrete hydrogen ions and reabsorb bicarbonate, resulting in metabolic acidosis. The symptoms of fatigue, nausea, and shortness of breath are consistent with this condition.",
+        "keyIndicators": "Chronic renal failure, fatigue, nausea, shortness of breath."
+    },
+    {
+        "scenario": "A 34-year-old female presents with a high fever, productive cough, and pleuritic chest pain. She is diagnosed with pneumonia and appears to be breathing rapidly.",
+        "correct": "respiratory_alkalosis",
+        "detailedExplanation": "The patient’s pneumonia has led to hyperventilation, likely due to fever and pleuritic pain, resulting in excessive CO2 elimination and respiratory alkalosis. The rapid breathing and symptoms are consistent with this diagnosis.",
+        "keyIndicators": "Pneumonia, high fever, hyperventilation, productive cough, pleuritic chest pain."
+    },
+    {
+        "scenario": "A 60-year-old male with a history of liver cirrhosis presents with confusion, asterixis, and jaundice.",
+        "correct": "metabolic_acidosis",
+        "detailedExplanation": "The patient’s liver cirrhosis has led to impaired metabolism of toxins, resulting in metabolic acidosis. The symptoms of confusion, asterixis, and jaundice are consistent with an inability to clear toxins from the bloodstream.",
+        "keyIndicators": "Liver cirrhosis, confusion, asterixis, jaundice."
+    },
+    {
+        "scenario": "A 55-year-old female presents with generalised muscle weakness and hyporeflexia. She has been taking large doses of antacids for several weeks.",
+        "correct": "metabolic_alkalosis",
+        "detailedExplanation": "Chronic use of antacids can lead to excessive bicarbonate absorption, resulting in metabolic alkalosis. The symptoms of generalised muscle weakness and hyporeflexia are consistent with this condition.",
+        "keyIndicators": "Chronic antacid use, generalised muscle weakness, hyporeflexia."
+    },
+    {
+        "scenario": "A 40-year-old male presents with confusion, slurred speech, and difficulty waking up. He has a history of binge drinking. On examination, he is drowsy and his breathing is slow and shallow.",
+        "correct": "respiratory_acidosis",
+        "detailedExplanation": "Binge drinking can depress the central nervous system, leading to decreased respiratory drive. This results in hypoventilation and CO2 retention, causing respiratory acidosis. The symptoms of confusion, slurred speech, and shallow breathing are consistent with CO2 retention.",
+        "keyIndicators": "Binge drinking, slow and shallow breathing, confusion, slurred speech, difficulty waking up."
+    },
+    {
+        "scenario": "A 70-year-old female presents with muscle cramps, irritability, and confusion. She has been taking furosemide for hypertension. On examination, she shows signs of dehydration.",
+        "correct": "metabolic_alkalosis",
+        "detailedExplanation": "Chronic use of diuretics like furosemide can lead to a loss of hydrogen ions and potassium, resulting in metabolic alkalosis. The patient's symptoms of muscle cramps, irritability, and dehydration are consistent with this condition.",
+        "keyIndicators": "Chronic diuretic use, muscle cramps, dehydration, irritability, confusion."
+    },
+    {
+        "scenario": "A 25-year-old male presents with chest pain, dizziness, and numbness around the mouth after a stressful event. His respiratory rate is 30 breaths per minute, and he appears anxious.",
+        "correct": "respiratory_alkalosis",
+        "detailedExplanation": "The patient is hyperventilating due to anxiety following a stressful event, leading to excessive elimination of CO2. This causes respiratory alkalosis. The symptoms of dizziness, chest pain, and numbness around the mouth are consistent with hyperventilation.",
+        "keyIndicators": "Stressful event, hyperventilation, chest pain, dizziness, numbness around the mouth."
+    },
+    {
+        "scenario": "A 45-year-old female presents with persistent diarrhoea for several days. She complains of fatigue, abdominal cramping, and shortness of breath. On examination, she appears dehydrated.",
+        "correct": "metabolic_acidosis",
+        "detailedExplanation": "Persistent diarrhoea leads to a loss of bicarbonate from the gastrointestinal tract, resulting in metabolic acidosis. The patient's symptoms of fatigue, dehydration, and abdominal cramping are consistent with this condition.",
+        "keyIndicators": "Persistent diarrhoea, fatigue, dehydration, abdominal cramping, shortness of breath."
+    },
+    {
+        "scenario": "A 60-year-old male with a history of sleep apnoea presents with morning headaches, confusion, and fatigue. His partner reports loud snoring and episodes of stopped breathing during sleep.",
+        "correct": "respiratory_acidosis",
+        "detailedExplanation": "Sleep apnoea leads to repeated episodes of hypoventilation during sleep, causing CO2 retention and respiratory acidosis. The symptoms of morning headaches, confusion, and loud snoring are consistent with this condition.",
+        "keyIndicators": "History of sleep apnoea, morning headaches, hypoventilation, loud snoring, episodes of stopped breathing."
+    },
+    {
+        "scenario": "A 32-year-old female presents with nausea, vomiting, and fatigue. She has been using excessive laxatives for weight loss. On examination, she appears dehydrated and hypotensive.",
+        "correct": "metabolic_alkalosis",
+        "detailedExplanation": "Excessive laxative use can lead to significant electrolyte imbalances and loss of hydrogen ions, resulting in metabolic alkalosis. The symptoms of dehydration, nausea, and hypotension are consistent with this condition.",
+        "keyIndicators": "Excessive laxative use, dehydration, nausea, hypotension, fatigue."
+    },
+    {
+        "scenario": "A 50-year-old male presents with rapid, shallow breathing, chest tightness, and anxiety after exposure to an allergen. He has a history of asthma.",
+        "correct": "respiratory_alkalosis",
+        "detailedExplanation": "The patient’s rapid, shallow breathing due to an asthma exacerbation and anxiety leads to excessive elimination of CO2, resulting in respiratory alkalosis. The symptoms of chest tightness and anxiety are consistent with this condition.",
+        "keyIndicators": "History of asthma, allergen exposure, rapid shallow breathing, chest tightness, anxiety."
+    }
+];
+
+
+        let currentQuestionIndex = 0;
+        let selectedOptions = {
+            primaryProblem: null,
+            compensationType: null,
+            compensation: null
+        };
+
+        let currentQuestionIndex2 = 0;
+        let selectedOptions2 = {
+            primaryProblem2: null,
+            compensationType2: null,
+            compensation2: null
+        };
+
+        let currentScenarioIndex = 0;
+        let selectedOptionCBL = "";
+
+        function goToPage2() {
+            document.getElementById("landingPage").style.display = "none";
+            document.getElementById("page2").style.display = "block";
+        }
+
+function toggleFullScreen() {
+    let elem = document.documentElement; // Target the entire page
+    let buttons = document.querySelectorAll(".fullScreenToggle");
+
+    if (!document.fullscreenElement) {
+        // Enter full-screen mode
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.mozRequestFullScreen) { // Firefox
+            elem.mozRequestFullScreen();
+        } else if (elem.webkitRequestFullscreen) { // Chrome, Safari, and Opera
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { // IE/Edge
+            elem.msRequestFullscreen();
+        }
+        // Update all buttons to "Close Full Screen Mode"
+        buttons.forEach(button => button.innerText = "Close Full Screen Mode");
+    } else {
+        // Exit full-screen mode
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) { // Firefox
+            document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) { // Chrome, Safari, and Opera
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) { // IE/Edge
+            document.msExitFullscreen();
+        }
+        // Update all buttons to "Open Full Screen Mode"
+        buttons.forEach(button => button.innerText = "Open Full Screen Mode");
+    }
+}
+
+document.addEventListener("fullscreenchange", () => {
+    let buttons = document.querySelectorAll(".fullScreenToggle");
+    if (!document.fullscreenElement) {
+        buttons.forEach(button => button.innerText = "Open Full Screen Mode");
+    } else {
+        buttons.forEach(button => button.innerText = "Close Full Screen Mode");
+    }
+});
+
+function goToLevel1() {
+    document.getElementById("page2").style.display = "none";
+    resetLevel1(); // Reset Level 1 page before showing it
+    document.getElementById("level1").style.display = "flex";
+    const objectives = [
+        "Understand the basic principles of ABG interpretation.",
+        "Identify the key components of acid-base imbalance.",
+        "Learn how to recognize respiratory and metabolic disorders."
+    ];
+    showLearningObjectives("Level 1", objectives, "startLevel1()");
+    loadQuestion(); // Make sure the question is loaded immediately.
+}
+        function startLevel1() {
+            document.getElementById("learningObjectives").style.display = "none";
+            document.getElementById("level1").style.display = "flex";
+            loadQuestion();
+        }
+
+function goToLevel2() {
+    document.getElementById("page2").style.display = "none";
+    resetLevel2(); // Reset Level 2 page before showing it
+    document.getElementById("level2").style.display = "flex";
+    const objectives = [
+        "Advance your understanding of complex ABG scenarios.",
+        "Identify types of compensation and understand their implications.",
+        "Apply critical thinking to interpret ABG values in complex cases."
+    ];
+    showLearningObjectives("Level 2", objectives, "startLevel2()");
+    loadQuestion2(); // Make sure the question is loaded immediately.
+}
+        function startLevel2() {
+            document.getElementById("learningObjectives").style.display = "none";
+            document.getElementById("level2").style.display = "flex";
+            loadQuestion2();
+}
+
+
+function goToCaseBasedLearning() {
+    document.getElementById("page2").style.display = "none";
+    resetCaseBasedLearning(); // Reset Case-Based Learning page before showing it
+    document.getElementById("caseBasedLearning").style.display = "flex";
+    const objectives = [
+        "Apply ABG interpretation skills in real-life scenarios.",
+        "Make clinical decisions based on acid-base balance assessment.",
+        "Improve problem-solving abilities in case-based learning."
+    ];
+    showLearningObjectives("Case-Based Learning", objectives, "startCaseBasedLearning()");
+}
+        function startCaseBasedLearning() {
+            document.getElementById("learningObjectives").style.display = "none";
+            document.getElementById("caseBasedLearning").style.display = "flex";
+            loadScenario();
+}
+
+        function loadQuestion() {
+            currentQuestionIndex = Math.floor(Math.random() * abgQuestions.length);
+            let question = abgQuestions[currentQuestionIndex];
+            document.getElementById("ph").value = question.pH;
+            document.getElementById("paco2").value = question.PaCO2;
+            document.getElementById("hco3").value = question.HCO3;
+        }
+
+        function loadQuestion2() {
+            currentQuestionIndex2 = Math.floor(Math.random() * abgQuestions2.length);
+            let question = abgQuestions2[currentQuestionIndex2];
+            document.getElementById("ph2").value = question.pH;
+            document.getElementById("paco2-2").value = question.PaCO2;
+            document.getElementById("hco3-2").value = question.HCO3;
+
+            resetOptions2();
+        }
+
+function loadScenario() {
+    currentScenarioIndex = Math.floor(Math.random() * scenarios.length);
+    const scenarioElement = document.getElementById('scenario');
+    scenarioElement.textContent = scenarios[currentScenarioIndex].scenario;
+
+    // Optionally, add different images for each scenario
+    const scenarioImage = document.querySelector('.scenario-image');
+    scenarioImage.src = "https://i.postimg.cc/5tT9g3fz/Heart-animation.png"; // Replace with specific images for each scenario
+}
+
+        function resetOptions() {
+            selectedOptions = {
+                primaryProblem: null,
+                compensationType: null,
+                compensation: null
+            };
+            let buttons = document.querySelectorAll("#level1 .options button");
+            buttons.forEach(button => button.classList.remove("selected"));
+        }
+
+        function resetOptions2() {
+            selectedOptions2 = {
+                primaryProblem2: null,
+                compensationType2: null,
+                compensation2: null
+            };
+            let buttons = document.querySelectorAll("#level2 .options button");
+            buttons.forEach(button => button.classList.remove("selected"));
+        }
+
+        function selectOption(category, value, button) {
+            selectedOptions[category] = value;
+
+            let buttons = document.querySelectorAll(`#${category}Options button`);
+            buttons.forEach(btn => btn.classList.remove("selected"));
+
+            button.classList.add("selected");
+        }
+
+function selectOption2(category, value, button) {
+    // Update the selected option for the specific category
+    selectedOptions2[category] = value;
+
+    // Determine the ID to find all buttons in the specific category within Level 2 Page
+    let buttons;
+    switch (category) {
+        case 'primaryProblem2':
+            buttons = document.querySelectorAll('#primaryProblemOptions2 button');
+            break;
+        case 'compensationType2':
+            buttons = document.querySelectorAll('#compensationTypeOptions2 button');
+            break;
+        case 'compensation2':
+            buttons = document.querySelectorAll('#compensationOptions2 button');
+            break;
+    }
+
+    // Remove 'selected' class from all buttons in that category
+    buttons.forEach(btn => btn.classList.remove("selected"));
+
+    // Add 'selected' class to the clicked button
+    button.classList.add("selected");
+}
+
+      
+        function selectOptionCBL(option) {
+            selectedOptionCBL = option;
+            const buttons = document.querySelectorAll('.button-group button');
+            buttons.forEach(button => button.classList.remove('selected'));
+            document.querySelector(`button[onclick="selectOptionCBL('${option}')"]`).classList.add('selected');
+        }
+
+// Interpret ABG function to display response, description, and table
+function interpretABG() {
+    let correctAnswer = abgQuestions[currentQuestionIndex];
+    if (
+        selectedOptions.primaryProblem === correctAnswer.primaryProblem &&
+        selectedOptions.compensationType === correctAnswer.compensationType &&
+        selectedOptions.compensation === correctAnswer.compensation
+    ) {
+        let description = getDescription(correctAnswer.primaryProblem);
+        let tableHTML = `
+            <table class="abg-table">
+                <thead>
+                    <tr>
+                        <th>Condition</th>
+                        <th>pH</th>
+                        <th>PaCO<sub>2</sub> (mmHg)</th>
+                        <th>HCO<sub>3</sub><sup>-</sup> (mEq/L)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Metabolic Acidosis</td>
+                        <td>&#8595; (&lt; 7.35)</td>
+                        <td>Normal (35-45)</td>
+                        <td>&#8595; (&lt; 22)</td>
+                    </tr>
+                    <tr>
+                        <td>Metabolic Alkalosis</td>
+                        <td>&#8593; (&gt; 7.45)</td>
+                        <td>Normal (35-45)</td>
+                        <td>&#8593; (&gt; 26)</td>
+                    </tr>
+                    <tr>
+                        <td>Respiratory Acidosis</td>
+                        <td>&#8595; (&lt; 7.35)</td>
+                        <td>&#8593; (&gt; 45)</td>
+                        <td>Normal (22-26)</td>
+                    </tr>
+                    <tr>
+                        <td>Respiratory Alkalosis</td>
+                        <td>&#8593; (&gt; 7.45)</td>
+                        <td>&#8595; (&lt; 35)</td>
+                        <td>Normal (22-26)</td>
+                    </tr>
+                </tbody>
+            </table>`;
+
+        document.getElementById("leftPanel").innerHTML = `<h3>Correct!</h3><p>${correctAnswer.response}</p><br><p>${description}</p><br>${tableHTML}`;
+        document.getElementById("nextQuestionButton").style.display = "inline-block";
+    } else {
+        document.getElementById("leftPanel").innerHTML = "<h3>Incorrect</h3><p>Whoops, try again.</p>";
+    }
+}
+
+// Get description based on primary problem
+function getDescription(primaryProblem) {
+    switch (primaryProblem) {
+        case "metAcid":
+            return "Uncompensated metabolic acidosis occurs when there is a decrease in bicarbonate (HCO₃⁻) levels, leading to a decrease in pH. The PaCO₂ is normal, indicating that respiratory compensation has not yet occurred.";
+        case "metAlk":
+            return "Uncompensated metabolic alkalosis occurs when there is an increase in bicarbonate (HCO₃⁻) levels, leading to an increase in pH. The PaCO₂ remains normal, showing that respiratory compensation has not occurred.";
+        case "respAcid":
+            return "Uncompensated respiratory acidosis occurs when there is an increase in PaCO₂ due to hypoventilation, leading to a decrease in pH. The bicarbonate level remains normal, indicating no renal compensation.";
+        case "respAlk":
+            return "Uncompensated respiratory alkalosis occurs when there is a decrease in PaCO₂ due to hyperventilation, leading to an increase in pH. The bicarbonate level is normal, showing no renal compensation.";
+        default:
+            return "";
+    }
+}
+        function showStage(stageNumber) {
+            document.querySelectorAll('.stage').forEach(stage => {
+                stage.style.display = 'none';
+            });
+            document.getElementById('stage-' + stageNumber).style.display = 'block';
+        }
+
+        function nextStage(currentStage) {
+            const nextStageNumber = currentStage + 1;
+            showStage(nextStageNumber);
+        }
+
+        function previousStage(currentStage) {
+            const previousStageNumber = currentStage - 1;
+            showStage(previousStageNumber);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            showStage(1);
+        });
+
+function interpretABG2() {
+    let correctAnswer = abgQuestions2[currentQuestionIndex2];
+    if (
+        selectedOptions2.primaryProblem2 === correctAnswer.primaryProblem &&
+        selectedOptions2.compensationType2 === correctAnswer.compensationType &&
+        selectedOptions2.compensation2 === correctAnswer.compensation
+    ) {
+        let description = getDescription(correctAnswer.primaryProblem);
+        let tableHTML = `
+            <table class="abg-table">
+                <thead>
+                    <tr>
+                        <th>Condition</th>
+                        <th>pH</th>
+                        <th>PaCO<sub>2</sub> (mmHg)</th>
+                        <th>HCO<sub>3</sub><sup>-</sup> (mEq/L)</th>
+                        <th>Compensation Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Metabolic Acidosis</td>
+                        <td>&#8595; (&lt; 7.35)</td>
+                        <td>Normal (35-45)</td>
+                        <td>&#8595; (&lt; 22)</td>
+                        <td>Respiratory Compensation (↓ PaCO₂)</td>
+                    </tr>
+                    <tr>
+                        <td>Metabolic Alkalosis</td>
+                        <td>&#8593; (&gt; 7.45)</td>
+                        <td>Normal (35-45)</td>
+                        <td>&#8593; (&gt; 26)</td>
+                        <td>Respiratory Compensation (↑ PaCO₂)</td>
+                    </tr>
+                    <tr>
+                        <td>Respiratory Acidosis</td>
+                        <td>&#8595; (&lt; 7.35)</td>
+                        <td>&#8593; (&gt; 45)</td>
+                        <td>Normal (22-26)</td>
+                        <td>Renal Compensation (↑ HCO₃⁻)</td>
+                    </tr>
+                    <tr>
+                        <td>Respiratory Alkalosis</td>
+                        <td>&#8593; (&gt; 7.45)</td>
+                        <td>&#8595; (&lt; 35)</td>
+                        <td>Normal (22-26)</td>
+                        <td>Renal Compensation (↓ HCO₃⁻)</td>
+                    </tr>
+                </tbody>
+            </table>`;
+
+        document.getElementById("leftPanel2").innerHTML = `<h3>Correct!</h3><p>${correctAnswer.response}</p><br><p>${description}</p><br>${tableHTML}`;
+        document.getElementById("nextQuestionButton2").style.display = "inline-block";
+    } else {
+        document.getElementById("leftPanel2").innerHTML = "<h3>Incorrect</h3><p>Whoops, try again.</p>";
+    }
+}
+
+function interpretAnswerCBL() {
+    const leftPanel = document.getElementById('left-panel');
+    if (selectedOptionCBL === scenarios[currentScenarioIndex].correct) {
+        const explanation = scenarios[currentScenarioIndex];
+        const formattedExplanation = `
+            <p><strong>Correct Answer:</strong></p>
+            <p><strong>Detailed Explanation:</strong></p>
+            <p>${explanation.detailedExplanation}</p>
+            <p><strong>Key Indicators:</strong></p>
+            <p>${explanation.keyIndicators}</p>
+        `;
+        leftPanel.innerHTML = formattedExplanation;
+        document.getElementById('next-button').style.display = 'inline-block';
+    } else {
+        leftPanel.innerHTML = `<p>Whoops, Incorrect. Please try again.</p>`;
+    }
+}
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex >= abgQuestions.length) {
+                currentQuestionIndex = 0;
+            }
+            resetOptions();
+            loadQuestion();
+            document.getElementById("nextQuestionButton").style.display = "none";
+            document.getElementById("leftPanel").innerHTML = "";
+        }
+
+        function nextQuestion2() {
+            currentQuestionIndex2++;
+            if (currentQuestionIndex2 >= abgQuestions2.length) {
+                currentQuestionIndex2 = 0;
+            }
+            resetOptions2();
+            loadQuestion2();
+            document.getElementById("nextQuestionButton2").style.display = "none";
+            document.getElementById("leftPanel2").innerHTML = "";
+        }
+
+        function nextQuestionCBL() {
+            currentScenarioIndex = (currentScenarioIndex + 1) % scenarios.length;
+            loadScenario();
+            document.getElementById('left-panel').innerHTML = `<p>Please read the scenario on the right and choose the best interpretation of the acid-base imbalance.</p>`;
+            document.getElementById('next-button').style.display = 'none';
+            const buttons = document.querySelectorAll('.button-group button');
+            buttons.forEach(button => button.classList.remove('selected'));
+            selectedOptionCBL = "";
+        }
+
+function goBackToPage2() {
+    // Reset Level 1, Level 2, and Case-Based Learning pages
+    resetLevel1();
+    resetLevel2();
+    resetCaseBasedLearning();
+
+    // Hide Level 1, Level 2, and Case-Based Learning pages
+    document.getElementById("level1").style.display = "none";
+    document.getElementById("level2").style.display = "none";
+    document.getElementById("caseBasedLearning").style.display = "none";
+
+    // Show Page 2
+    document.getElementById("page2").style.display = "block";
+}
+function showLearningObjectives(title, objectives, onStartCallback) {
+    // Update the content of the overlay with specific learning objectives
+    const learningObjectivesContainer = document.getElementById("learningObjectives");
+    document.getElementById("objectivesTitle").innerText = `${title} - Learning Objectives`;
+    document.getElementById("objectivesList").innerHTML = objectives.map(obj => `<li>${obj}</li>`).join('');
+
+    // Update the onclick function of the start button
+    const startButton = document.getElementById("startLearningButton");
+    startButton.onclick = function () {
+        hideLearningObjectives();
+        window[onStartCallback]();
+    };
+
+    // Show the overlay
+    learningObjectivesContainer.style.display = "flex";
+}
+function hideLearningObjectives() {
+    // Hide the overlay
+    document.getElementById("learningObjectives").style.display = "none";
+}
+function goToHowToPlay() {
+    // Show the instructions overlay when "How Do I Play" button is clicked
+    document.getElementById("instructionsOverlay").style.display = "flex";
+}
+
+function hideInstructions() {
+    // Hide the instructions overlay when "Got it!" button is clicked
+    document.getElementById("instructionsOverlay").style.display = "none";
+}
+
+// Select elements
+const showChatButton = document.getElementById("showChatButton");
+const page2 = document.getElementById("page2");
+const chatPage = document.getElementById("chatPage");
+const closeChatButton = document.getElementById("closeChatButton");
+const entryField = document.getElementById("entryField");
+const replyBtn = document.getElementById("replyBtn");
+const messages = document.getElementById("messages");
+
+// Add shared class to reply button
+replyBtn.classList.add("chat-button");
+
+// Create and add the microphone button for speech recognition with shared class
+const micButton = document.createElement("button");
+micButton.textContent = "🎤";
+micButton.classList.add("chat-button"); // Add the shared class
+micButton.addEventListener("click", startSpeechRecognition);
+document.querySelector(".input-container").appendChild(micButton);
+
+function startSpeechRecognition() {
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = "en-US";
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        entryField.value = ""; // Clear the input field
+        displayMessage(transcript, "user"); // Display the speech result directly in the message screen
+        setTimeout(() => handleUserMessage(transcript), 2500); // Process the message as if it was sent
+    };
+    recognition.start();
+}
+
+// RN names and ABG example questions
+const rnNames = ["Alex (RN)", "Taylor (RN)", "Jordan (RN)", "Sam (RN)", "Morgan (RN)", "Casey (RN)"];
+let awaitingConfirmation = true;
+let awaitingPracticeSelection = false;
+let selectedExamples = [];
+let questionSet = 0;
+let currentExampleIndex = 0;
+let isFirstExample = true;
+let questionCount = 0; // Track questions asked in the current question set
+let awaitingCompensationQuestion = false; // Track if waiting for compensation question answer
+let awaitingPrimaryDisorderQuestion = true; // Track if waiting for primary disorder question
+
+const fundamentalExamples = [
+    { values: { pH: "7.40", PaCO2: "40", HCO3: "24", PaO2: "95" }, primaryDisorder: "Normal", compensationLevel: "None", compensationType: null },
+    { values: { pH: "7.32", PaCO2: "48", HCO3: "22", PaO2: "92" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "None", compensationType: null },
+    { values: { pH: "7.32", PaCO2: "48", HCO3: "22", PaO2: "92" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "None", compensationType: null },
+    { values: { pH: "7.32", PaCO2: "48", HCO3: "22", PaO2: "92" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "None", compensationType: null },
+    { values: { pH: "7.32", PaCO2: "48", HCO3: "22", PaO2: "92" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "None", compensationType: null },
+    { values: { pH: "7.32", PaCO2: "48", HCO3: "22", PaO2: "92" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "None", compensationType: null },
+    { values: { pH: "7.32", PaCO2: "48", HCO3: "22", PaO2: "92" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "None", compensationType: null },
+    { values: { pH: "7.32", PaCO2: "48", HCO3: "22", PaO2: "92" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "None", compensationType: null },
+    { values: { pH: "7.32", PaCO2: "48", HCO3: "22", PaO2: "92" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "None", compensationType: null },
+    { values: { pH: "7.32", PaCO2: "48", HCO3: "22", PaO2: "92" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "None", compensationType: null },
+    // Add more examples as needed
+];
+
+const compensationExamples = [
+    { values: { pH: "7.32", PaCO2: "48", HCO3: "24", PaO2: "80" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "Partial", compensationType: "Metabolic Alkalosis" },
+    { values: { pH: "7.28", PaCO2: "50", HCO3: "30", PaO2: "85" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "Full", compensationType: "Metabolic Alkalosis" },
+    { values: { pH: "7.28", PaCO2: "50", HCO3: "30", PaO2: "85" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "Full", compensationType: "Metabolic Alkalosis" },
+    { values: { pH: "7.28", PaCO2: "50", HCO3: "30", PaO2: "85" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "Full", compensationType: "Metabolic Alkalosis" },
+    { values: { pH: "7.28", PaCO2: "50", HCO3: "30", PaO2: "85" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "Full", compensationType: "Metabolic Alkalosis" },
+    { values: { pH: "7.28", PaCO2: "50", HCO3: "30", PaO2: "85" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "Full", compensationType: "Metabolic Alkalosis" },
+    { values: { pH: "7.28", PaCO2: "50", HCO3: "30", PaO2: "85" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "Full", compensationType: "Metabolic Alkalosis" },
+    { values: { pH: "7.28", PaCO2: "50", HCO3: "30", PaO2: "85" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "Full", compensationType: "Metabolic Alkalosis" },
+    { values: { pH: "7.28", PaCO2: "50", HCO3: "30", PaO2: "85" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "Full", compensationType: "Metabolic Alkalosis" },
+    { values: { pH: "7.28", PaCO2: "50", HCO3: "30", PaO2: "85" }, primaryDisorder: "Respiratory Acidosis", compensationLevel: "Full", compensationType: "Metabolic Alkalosis" },
+    // Add more examples as needed
+];
+
+const randomExamples = fundamentalExamples.concat(compensationExamples);
+
+// Expanded answer synonyms with conversational variations
+const answerSynonyms = {
+    "Normal": [
+        "normal", "normal abg", "this is normal", "looks normal", 
+        "indicates normal", "this indicates a normal abg", "seems normal",
+        "is it normal", "would this be normal", "it’s normal right", 
+        "it appears normal", "is this normal", "looks like normal"
+    ],
+    "Respiratory Acidosis": [
+        "respiratory acidosis", "high co2", "acidic", "acidotic", 
+        "respiratory issue with high co2", "this looks like respiratory acidosis",
+        "is it respiratory acidosis", "could this be respiratory acidosis",
+        "respiratory acidosis right", "high carbon dioxide", "high co2 level"
+    ],
+    "Partial": [
+        "partial", "partially compensated", "partial compensation",
+        "it looks partially compensated", "is it partial compensation"
+    ],
+    "Full": [
+        "full", "fully compensated", "full compensation",
+        "it looks fully compensated", "is it full compensation"
+    ]
+};
+
+// Fuse.js settings with lower threshold for flexible matching and case insensitivity
+const fuseOptions = { includeScore: true, threshold: 0.6, ignoreLocation: true, keys: ["text"] };
+const answerFuses = {};
+for (const answer in answerSynonyms) {
+    answerFuses[answer] = new Fuse(answerSynonyms[answer].map(text => ({ text })), fuseOptions);
+}
+
+// Show chat page, hide page2, and reset chat for a fresh start
+if (showChatButton && page2 && chatPage) {
+    showChatButton.addEventListener("click", function() {
+        page2.style.display = "none";       // Hide page2
+        chatPage.style.display = "block";   // Show chat page
+        resetChat();                        // Reset chat and start initial conversation
+    });
+} else {
+    console.error("One or more elements (showChatButton, page2, chatPage) are missing from the HTML.");
+}
+
+// Close chat and reset
+if (closeChatButton) {
+    closeChatButton.addEventListener("click", function() {
+        chatPage.style.display = "none";    // Hide chat page
+        page2.style.display = "block";      // Show page2
+        resetChat();                        // Reset chat content and variables
+    });
+}
+
+// Function to reset chat content, variables, and start the initial conversation
+function resetChat() {
+    messages.innerHTML = "";                // Clear all messages
+    entryField.value = "";                  // Clear input field
+    awaitingConfirmation = true;            // Reset state variables
+    awaitingPracticeSelection = false;
+    selectedExamples = [];
+    questionSet = 0;
+    currentExampleIndex = 0;
+    isFirstExample = true;
+    awaitingCompensationQuestion = false;
+    awaitingPrimaryDisorderQuestion = true;
+
+    displayDelayedMessages([
+        { text: "Hi there, we'll connect you with an ABG Interpreter in just a moment.", sender: "rn" },
+        { text: `${rnNames[Math.floor(Math.random() * rnNames.length)]}: Hi, would you like to test your interpretation skills?`, sender: "rn" }
+    ]);
+}
+
+function scrollToBottom() {
+    const messagesContainer = document.querySelector('.messages');
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Function to delay with dynamic adjustment based on message length
+function delay(ms = 1500) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function dynamicDelay(message) {
+    const baseDelay = 1000; // Base delay in milliseconds
+    const lengthFactor = 50; // Add extra delay per character
+    return baseDelay + (message.length * lengthFactor);
+}
+
+// Display initial messages with a fixed delay
+async function displayDelayedMessages(messagesArray) {
+    for (const message of messagesArray) {
+        await delay(2000); // Fixed delay for initial setup messages
+        displayMessage(message.text, message.sender);
+    }
+}
+
+// Display other delayed messages with a dynamic delay based on length
+async function displayDelayedMessage(message, sender) {
+    showTypingIndicator();
+    await delay(dynamicDelay(message));  // Dynamic delay based on message length
+    hideTypingIndicator();
+    await delay(500);  // Short delay before showing the message
+    displayMessage(message, sender);
+}
+
+async function displayDelayedMessage(message, sender) {
+    showTypingIndicator();
+    await delay(2000);  // Typing indicator delay
+    hideTypingIndicator();
+    await delay(1000);  // Delay before showing the RN message
+    displayMessage(message, sender);
+}
+
+function showTypingIndicator() {
+    const typingElem = document.createElement("div");
+    typingElem.id = "typingIndicator";
+    typingElem.classList.add("typing-indicator");
+    typingElem.innerHTML = "<div class='dot'></div><div class='dot'></div><div class='dot'></div>";
+    messages.appendChild(typingElem);
+    typingElem.style.opacity = "1"; // Ensures visibility with animation
+    scrollToBottom();
+}
+
+function hideTypingIndicator() {
+    const typingElem = document.getElementById("typingIndicator");
+    if (typingElem) {
+        typingElem.style.opacity = "0"; // Fade out
+        setTimeout(() => {
+            if (typingElem) messages.removeChild(typingElem);
+        }, 500); // Matches CSS fade-out duration
+    }
+}
+
+// Function to display a message in the chatbox
+function displayMessage(message, sender) {
+    const messageElem = document.createElement("div");
+    messageElem.classList.add("message", sender === "rn" ? "message-rn" : "message-user");
+    messageElem.textContent = message;
+    messages.appendChild(messageElem);
+    messages.scrollTop = messages.scrollHeight; // Auto-scroll to the latest message
+}
+
+replyBtn.addEventListener("click", () => {
+    const userMessage = entryField.value.trim();
+    if (userMessage) {
+        displayMessage(userMessage, "user"); // Display user message immediately
+        entryField.value = ""; 
+        setTimeout(() => handleUserMessage(userMessage), 2500); // Increased delay for RN response
+    }
+});
+
+function handleUserMessage(userMessage) {
+    const confirmationKeywords = /(?:yes|sure|okay|yep|yeah|ready|start|begin|go ahead|do it|alright|affirmative|absolutely|why not|definitely)/i;
+    
+    if (confirmationKeywords.test(userMessage) && awaitingConfirmation) {
+        awaitingConfirmation = false;
+        awaitingPracticeSelection = true;
+        displayDelayedMessage("RN: Great! Choose a practice type: Fundamental examples, Compensation examples, or Random.", "rn");
+    } else if (awaitingPracticeSelection) {
+        handlePracticeSelection(userMessage);
+    } else {
+        checkAnswer(userMessage); // Check the user's answer if awaiting response to ABG interpretation
+    }
+}
+
+function handlePracticeSelection(userMessage) {
+    const normalizedMessage = userMessage.toLowerCase();
+    let introMessage;
+
+    if (normalizedMessage.includes("fundamental")) {
+        questionSet = 1;
+        selectedExamples = fundamentalExamples.slice();
+        introMessage = "RN: Let's start with fundamental examples. These will focus on basic ABG results without compensation.";
+        isFirstExample = true;
+        displayExampleSequence(introMessage);
+    } else if (normalizedMessage.includes("compensation")) {
+        questionSet = 2;
+        selectedExamples = compensationExamples.slice();
+        introMessage = "RN: Alright, we'll focus on compensation examples. These examples involve partial and full compensation.";
+        isFirstExample = true;
+        displayExampleSequence(introMessage);
+    } else if (normalizedMessage.includes("random")) {
+        questionSet = 3;
+        selectedExamples = randomExamples.slice();
+        introMessage = "RN: Let's try random examples, mixing both fundamental and compensation cases.";
+        isFirstExample = true;
+        displayExampleSequence(introMessage);
+    } else {
+        displayDelayedMessage("RN: Choose one: fundamental, compensation, or random.", "rn");
+    }
+    awaitingPracticeSelection = false;
+}
+
+function checkAnswer(userMessage) {
+    const normalizedMessage = userMessage.toLowerCase().trim();
+
+    const currentExample = selectedExamples[currentExampleIndex];
+    const primaryDisorderFuse = answerFuses[currentExample.primaryDisorder];
+    const compensationFuse = answerFuses[currentExample.compensationLevel];
+
+    if (awaitingCompensationQuestion) {
+        // Checking answer for compensation level
+        if (compensationFuse && compensationFuse.search(normalizedMessage).length > 0) {
+            displayDelayedMessage("RN: Correct! You've identified the compensation level. Moving to the next example.", "rn");
+            awaitingCompensationQuestion = false;
+            awaitingPrimaryDisorderQuestion = true; // Reset for next example
+            currentExampleIndex++;
+            setTimeout(displayExampleSequence, 1000);
+        } else {
+            displayDelayedMessage("RN: That's not correct. Please review the ABG values and try again.", "rn");
+        }
+    } else if (awaitingPrimaryDisorderQuestion) {
+        // Checking answer for primary disorder
+        if (primaryDisorderFuse && primaryDisorderFuse.search(normalizedMessage).length > 0) {
+            if (questionSet === 1) {
+                // If in the fundamental set, proceed to the next example immediately
+                displayDelayedMessage("RN: Correct! Moving to the next example.", "rn");
+                awaitingPrimaryDisorderQuestion = true; // Reset for next example
+                currentExampleIndex++;
+                setTimeout(displayExampleSequence, 1000);
+            } else {
+                // If in the compensation set, ask the compensation question next
+                displayDelayedMessage("RN: Correct! Now, do you think partial or full compensation is indicated here?", "rn");
+                awaitingCompensationQuestion = true;
+                awaitingPrimaryDisorderQuestion = false;
+            }
+        } else {
+            displayDelayedMessage("RN: That's not quite right. Think about the relationship between pH and CO2 levels.", "rn");
+        }
+    }
+}
+
+// Display ABG example in sequence with delays
+async function displayExampleSequence(introMessage) {
+    const example = selectedExamples[currentExampleIndex];
+    if (example) {
+        if (isFirstExample && introMessage) {
+            await displayDelayedMessage(introMessage, "rn");
+            isFirstExample = false;
+        }
+        
+        await delay(1000);
+        await displayDelayedMessage("RN: Here's your ABG result:", "rn");
+        
+        await delay(1000);
+        displayABGValues(example.values);
+        
+        await delay(1000);
+        await displayDelayedMessage("First, tell me what primary disorder is indicated by these results.", "rn");
+        awaitingPrimaryDisorderQuestion = true; // Reset for next example
+    } else {
+        displayDelayedMessage("RN: You've completed all available ABG examples. Great work!", "rn");
+    }
+}
+
+function displayABGValues(values) {
+    const abgContainer = document.createElement("div");
+    abgContainer.classList.add("abg-container");
+
+    Object.entries(values).forEach(([key, value]) => {
+        const abgBox = document.createElement("div");
+        abgBox.classList.add("abg-box");
+
+        const abgHeader = document.createElement("div");
+        abgHeader.classList.add("abg-box-header");
+        abgHeader.textContent = key;
+
+        const abgValue = document.createElement("div");
+        abgValue.classList.add("abg-box-value");
+        abgValue.textContent = value;
+
+        abgBox.appendChild(abgHeader);
+        abgBox.appendChild(abgValue);
+        abgContainer.appendChild(abgBox);
+    });
+
+    messages.appendChild(abgContainer);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+
+
+
+function resetLevel1() {
+    // DO NOT reset input fields here. They will be set by loadQuestion()
+    
+    // Reset selected options
+    resetOptions();
+
+    // Hide "Next Question" button and clear response message
+    document.getElementById("nextQuestionButton").style.display = "none";
+    document.getElementById("leftPanel").innerHTML = "";
+}
+
+function resetLevel2() {
+    // DO NOT reset input fields here. They will be set by loadQuestion2()
+    
+    // Reset selected options
+    resetOptions2();
+
+    // Hide "Next Question" button and clear response message
+    document.getElementById("nextQuestionButton2").style.display = "none";
+    document.getElementById("leftPanel2").innerHTML = "";
+}
+
+function resetCaseBasedLearning() {
+    // Reset scenario and clear selected option
+    loadScenario();
+    document.getElementById('left-panel').innerHTML = `<p>Please read the scenario on the right and choose the best interpretation of the acid-base imbalance.</p>`;
+    document.getElementById('next-button').style.display = 'none';
+
+    // Clear selected buttons
+    const buttons = document.querySelectorAll('.button-group button');
+    buttons.forEach(button => button.classList.remove('selected'));
+    selectedOptionCBL = "";
+}
+window.addEventListener("resize", function() {
+    adjustLayout();
+});
+
+function adjustLayout() {
+    let isPortrait = window.innerHeight > window.innerWidth;
+
+    if (isPortrait) {
+        // Portrait adjustments
+        document.querySelector('.game-container').style.flexDirection = 'column';
+        document.querySelectorAll('.left-panel, .right-panel').forEach(panel => {
+            panel.style.width = '100%';
+        });
+    } else {
+        // Landscape adjustments
+        document.querySelector('.game-container').style.flexDirection = 'row';
+        document.querySelectorAll('.left-panel, .right-panel').forEach(panel => {
+            panel.style.width = '50%';
+        });
+    }
+}
+
+function showOverlay() {
+    document.querySelector('.overlay-container').style.display = 'block';
+    
+}
+function closeOverlay() {
+    document.querySelector('.overlay-container').style.display = 'none';
+}
+document.getElementById('open-overlay-button').addEventListener('click', function() {
+    // Display the overlay when the button is clicked
+    document.getElementById('overlay-container').style.display = 'flex';
+});
+
+document.getElementById('close-overlay-button').addEventListener('click', function() {
+    // Hide the overlay when the close button is clicked
+    document.getElementById('overlay-container').style.display = 'none';
+});
+
+// Initial call to set up layout based on current orientation
+adjustLayout();
+
+function openSlideHelperUnique() {
+    const overlay = document.getElementById("slideHelperOverlayUnique");
+    overlay.style.display = "flex"; // Show the overlay container
+}
+
+function closeSlideHelper() {
+    document.getElementById("slideHelperOverlayUnique").style.display = "none";
+}
+
+function updateSliderValue(sliderId, displayId) {
+    document.getElementById(displayId).textContent = document.getElementById(sliderId).value;
+}
+
+function updateSliderValue(sliderId, displayId) {
+    const slider = document.getElementById(sliderId);
+    const value = parseFloat(slider.value);
+    document.getElementById(displayId).textContent = value;
+
+    // Update feedback based on ranges
+    let feedback = "";
+    if (sliderId === 'slider1') { // pH
+        if (value < 7.35) {
+            feedback = "Acidic";
+        } else if (value <= 7.45) {
+            feedback = "Normal";
+        } else {
+            feedback = "Alkaline";
+        }
+    } else if (sliderId === 'slider2') { // PaCO₂
+        if (value <= 34) {
+            feedback = "Alkaline";
+        } else if (value >= 46) {
+            feedback = "Acidic";
+        } else {
+            feedback = "Normal";
+        }
+    } else if (sliderId === 'slider3') { // HCO₃
+        if (value <= 21) {
+            feedback = "Acidic";
+        } else if (value >= 27) {
+            feedback = "Alkaline";
+        } else {
+            feedback = "Normal";
+        }
+    }
+    document.getElementById(sliderId + 'Feedback').textContent = feedback;
+}
+
+    </script>
+</body>
+</html>
